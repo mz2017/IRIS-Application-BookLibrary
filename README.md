@@ -7,7 +7,8 @@ To run this application, make sure your project is attahed to a IRIS server (or 
 ### Test steps
 1. Open a IRIS terminal
 2. Change to the namespace where the classes were loaded
-3. Start by creating some books in the database using command: ```
+3. Start by creating some books in the database using command: 
+    ```
     do ##class(Training.Library.LibraryUtils).AddBook()
     ```
 4. Add a few friends to the database who will borrow the books: ```
