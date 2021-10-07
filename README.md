@@ -11,25 +11,32 @@ To run this application, make sure your project is attahed to a IRIS server (or 
     ```
     do ##class(Training.Library.LibraryUtils).AddBook()
     ```
-4. Add a few friends to the database who will borrow the books: ```
+4. Add a few friends to the database who will borrow the books: 
+    ```
     do ##class(Training.Library.LibraryUtils).AddFriend()
-   ```
-5. Check all the books created: ```
+    ```
+5. Check all the books created: 
+    ```
     do ##class(Training.Library.LibraryUtils).PrintAllBookInfo()
     ```
-6. Loan a book to a friend: ```
+6. Loan a book to a friend: 
+    ```
     do ##class(Training.Library.LibraryUtils).LoanBook(bookId, friendName)
     ```
-7. Print out all loaned books: ```
+7. Print out all loaned books: 
+    ```
     do ##class(Training.Library.LibraryUtils).GetLoanedBooks()
     ```
-8. Find all books loaned by one friend: ```
+8. Find all books loaned by one friend: 
+    ```
     do ##class(Training.Library.LibraryUtils).FriendOwe("David")
     ```
-9. Make a book return: ```
+9. Make a book return: 
+    ```
     do ##class(Training.Library.LibraryUtils).ReturnBook(1)
     ```
-10. Find out which friend loaned a specific book: ```
+10. Find out which friend loaned a specific book: 
+    ```
      do ##class(Training.Library.LibraryUtils).GetFriend(2)
     ```
 
