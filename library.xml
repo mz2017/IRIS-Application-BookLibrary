@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2017.1 (Build 772)" ts="2017-05-01 10:40:13">
+<Class name="Library.Book">
+<Super>%Persistent,%Populate,%XML.Adaptor,%ZEN.DataModel.Adaptor</Super>
+<TimeChanged>64379,11958.275448</TimeChanged>
+<TimeCreated>64341,42021.915196</TimeCreated>
+
+<Property name="Title">
+<Type>%String</Type>
+<Required>1</Required>
+</Property>
+
+<Property name="Genre">
+<Type>%String</Type>
+</Property>
+
+<Property name="Friend">
+<Type>Person</Type>
+</Property>
+
+<Property name="Author">
+<Type>Person</Type>
+</Property>
+
+<Storage name="Default">
+<Type>%Library.CacheStorage</Type>
+<DataLocation>^Library.BookD</DataLocation>
+<DefaultData>BookDefaultData</DefaultData>
+<IdLocation>^Library.BookD</IdLocation>
+<IndexLocation>^Library.BookI</IndexLocation>
+<StreamLocation>^Library.BookS</StreamLocation>
+<Data name="BookDefaultData">
+<Value name="1">
+<Value>%%CLASSNAME</Value>
+</Value>
+<Value name="2">
+<Value>Title</Value>
+</Value>
+<Value name="3">
+<Value>Genre</Value>
+</Value>
+<Value name="4">
+<Value>Author</Value>
+</Value>
+<Value name="5">
+<Value>Friend</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+
+
+<Class name="Library.LibraryUtils">
+<Super>%RegisteredObject</Super>
+<TimeChanged>64404,38172.41188</TimeChanged>
+<TimeCreated>64379,10369.754282</TimeCreated>
+
+<Method name="AddBook">
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	// Create an object in which to store the book
+	set book = ##class(Library.Book).%New()
+
+	// Get the Book's Title
+	read #!!,"Please enter the book title: ",name
+	set book.Title = name
+	
+	// Get the Author's Name
+	read !,"Please enter the name of the author: ",author
+	// Check if this author exists and add to the object
+	&sql(SELECT id INTO :id FROM library.person WHERE Name = :author)
+	if (id '= ""){
+		set book.Author = ##class(Library.Person).%OpenId(id)
+	}
+	else{
+		// If not, create  this object's Author
+		set newAuthor = ##class(Library.Person).%New()
+		set newAuthor.Name = author
+		set book.Author = newAuthor
+		set statusPerson = newAuthor.%Save()
+	}
+	
+	// Get the Genre
+	read !,"Please enter a 1 for Non-Fiction or a 2 for Fiction: ",genre
+	if genre = "1" {
+		set book.Genre = "NonFiction"
+	}
+	else{
+		set book.Genre = "Fiction"
+	}
+	
+	// Save the book to the database
+	set status = book.%Save()
+	
+	// Return a status message of OK once complete
+	return status
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+// This Method, AddFriend adds a friend 
+
+]]></Content>
+</UDLText>
+
+<Method name="AddFriend">
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	// Create an object in which to store teh name
+	set friend = ##class(Library.Person).%New()
+	
+	// Get and store the name
+	read #!!,"Please enter the name of your new friend: ",name
+	set friend.Name = name
+	
+	// Get and store the phone number
+	read #!!,"Please enter the phone number of your new friend: ",phoneNum
+	set friend.PhoneNumber = phoneNum
+
+	// Save the object and return the status
+	set status = friend.%Save()
+	return status
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+// This Method prints out one item in the database
+
+]]></Content>
+</UDLText>
+
+<Method name="PrintOne">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>id:%String</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	// Open the book based on the ID given
+	set book = ##class(Library.Book).%OpenId(id)
+
+	// Write information about the book using the opened object
+	write !,"This book is called ", book.Title," and was written by ", book.Author.Name,"."
+	write !,"This is a ",book.Genre," book."
+
+	// Check if the book is on loan or not and return that to the user
+	if book.Friend = ""{
+		write !,"This book is currently in the library."
+	}
+	else{
+		write !,"This book is currently on loan to ",book.Friend.Name,"."
+	}
+
+	// Return a simple status of $$$OK 
+	return $$$OK
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+// This method prints all items from teh database
+
+]]></Content>
+</UDLText>
+
+<Method name="PrintAll">
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	&sql(select count(*) INTO :count from library.book)
+	// Iterate through all books
+	set id = 1
+	WHILE (id <= count) {
+		// This write will create a separator and give the user a correlation between book and ID
+		write !,"Book at ID ",id, ": "
+		do ##class(Library.LibraryUtils).PrintOne(id)
+		set id = id + 1
+	}
+	return $$$OK
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+// This Method, LoanBook, loans a book to a friend
+
+]]></Content>
+</UDLText>
+
+<Method name="LoanBook">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>bookID:%String,friend:%String</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	// Open the book object
+	set check = ##class(Library.Book).%OpenId(bookID)
+	
+	// If not empty, tell the user it is currently on loan and point them to ReturnBook.  Quit.
+	if (check.Friend '= ""){
+		write !,"This book is currently on loan.",!,"Please use the ReturnBook method to return the book before loaning it to a new friend."
+		quit $$$OK
+	}
+	else{
+		&sql(SELECT id INTO :id FROM library.person WHERE Name = :friend)
+		
+		if (id = ""){
+			write !,"This friend is not registered.",!,"Please use the AddFriend method to add a new friend."
+		quit $$$OK
+		}
+		
+		else{
+			set friend = ##class(Library.Person).%OpenId(id)
+			set check.Friend = friend
+			write !,"Book loaned to ",friend.Name,"."
+			set status = check.%Save()
+		}
+	}
+	return $$$OK
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+// This Method, ReturnBook, returns a book from a loan to the library
+
+]]></Content>
+</UDLText>
+
+<Method name="ReturnBook">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>id:%String</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	&sql(SELECT friend into :friendID FROM library.book WHERE id=:id)
+	set friend = ##class(Library.Person).%OpenId(friendID)
+	set book = ##class(Library.Book).%OpenId(id)
+	if friend = ""{
+		write !,"This book is not loaned.",!,"Please use the LoanBook() method to loan it to a friend."
+		quit $$$OK
+	}
+	else{
+		write !, "Book returned by ", friend.Name, "."
+		set book.Friend = ""
+		set status = book.%Save()
+		set status = friend.%Save()
+	}
+	return $$$OK
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+// This Method, GetLoanedBooks, will tell you how many books are out on loan
+
+]]></Content>
+</UDLText>
+
+<Method name="GetLoanedBooks">
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	&sql(SELECT count(id) INTO :count FROM library.book WHERE friend IS NOT NULL)
+	write !, count, " books are currently on loan."
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+// This Method, GetShelfBooks, will return how many books are currently on the shelf, not loaned to friends.
+
+]]></Content>
+</UDLText>
+
+<Method name="GetShelfBooks">
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	&sql(SELECT count(id) INTO :count FROM library.book WHERE friend IS NULL)
+	write !, count, " books are currently on the shelves."
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+// This Method, FriendOwe, tells you how many books a friend has borrowed
+
+]]></Content>
+</UDLText>
+
+<Method name="FriendOwe">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>friend:%String</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	&sql(SELECT id INTO :id FROM library.person WHERE Name = :friend)
+	&sql(SELECT count(*) INTO :count FROM library.book WHERE friend = :id)
+	write !, friend, " currently has ", count, " books on loan."
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+// This Method, GetFriend, will return which friend a book is currently on loan to.
+
+]]></Content>
+</UDLText>
+
+<Method name="GetFriend">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>id:%String</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set book = ##class(Library.Book).%OpenId(id)
+	set friend = book.Friend.Name
+	if (friend = ""){
+		set friend = "no one"
+	}
+	write !,"This book is currently loaned to ",friend,"."
+]]></Implementation>
+</Method>
+</Class>
+
+
+<Class name="Library.Person">
+<Super>%Persistent,%Populate,%XML.Adaptor,%ZEN.DataModel.Adaptor</Super>
+<TimeChanged>64379,40723.413748</TimeChanged>
+<TimeCreated>64379,10366.178071</TimeCreated>
+
+<Property name="Name">
+<Type>%String</Type>
+<Required>1</Required>
+</Property>
+
+<Property name="PhoneNumber">
+<Type>%String</Type>
+</Property>
+
+<Index name="NameIndex">
+<Properties>Name</Properties>
+<Unique>1</Unique>
+</Index>
+
+<Storage name="Default">
+<Type>%Library.CacheStorage</Type>
+<DataLocation>^Library.PersonD</DataLocation>
+<DefaultData>PersonDefaultData</DefaultData>
+<IdLocation>^Library.PersonD</IdLocation>
+<IndexLocation>^Library.PersonI</IndexLocation>
+<StreamLocation>^Library.PersonS</StreamLocation>
+<Data name="PersonDefaultData">
+<Value name="1">
+<Value>%%CLASSNAME</Value>
+</Value>
+<Value name="2">
+<Value>Name</Value>
+</Value>
+<Value name="3">
+<Value>PhoneNumber</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+</Export>

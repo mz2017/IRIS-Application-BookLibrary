@@ -1,0 +1,7 @@
+{
+    "objectscript.conn": {
+        "server": "localserver",
+        "ns": "SC",
+        "active": true
+    }
+}
