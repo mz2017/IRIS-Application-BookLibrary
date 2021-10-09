@@ -1,4 +1,4 @@
-# IRIS Application for Personal Book Libray
+# IRIS Application for Personal Book Library
 
 This is a simple IRIS server side application used to track books and people who loan books. This is the exercise of an [InterSystems training class](https://learning.intersystems.com/course/view.php?name=IRIS%20Server%20Side).
  
